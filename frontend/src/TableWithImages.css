@@ -1,0 +1,45 @@
+.table-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 50px;
+  font-family: sans-serif;
+}
+
+table {
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+td {
+  width: 120px; /* Фиксированная ширина ячейки */
+  height: 120px; /* Фиксированная высота ячейки */
+  border: 2px solid #ccc;
+  /* Убрали display: flex */
+  text-align: center;      /* Центрируем содержимое по горизонтали */
+  vertical-align: middle;  /* Центрируем содержимое по вертикали */
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+td:hover {
+  background-color: #f0f0f0;
+}
+
+td.selected {
+  border: 2px solid #007bff;
+  background-color: #e6f2ff;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+td.selected:hover {
+  background-color: #e6f2ff;
+}
+
+td img {
+  max-width: 100px;
+  max-height: 100px;
+  display: block; /* Сделать изображение блочным, чтобы margin: auto работало */
+  margin: auto;   /* Центрирование блочного изображения по горизонтали */
+}
