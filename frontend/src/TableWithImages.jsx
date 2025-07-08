@@ -1,52 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './TableWithImages.css';
 
 // Импортируем локальные изображения
-import imageMinus1 from './assets/image-2.png'; // Укажите правильный путь и расширение
-import image0 from './assets/image-0.png';           // Укажите правильный путь и расширение
-import image1 from './assets/image-1.png';           // Укажите правильный путь и расширение
+import imageMinus1 from './assets/image-2.png';
+import image0 from './assets/image-0.png';
+import image1 from './assets/image-1.png';
 
 const TableWithImages = () => {
-  // Инициализируем матрицу значениями, где кликабельны только '0'
-  // Пример: можно инициализировать матрицу случайными -1, 0, 1
+  // Инициализируем матрицу нулями
   const [matrix, setMatrix] = useState([
     [0, 0, 0],
     [0, 0, 0],
     [0, 0, 0],
   ]);
 
-  // Объект для быстрого сопоставления значений и изображений
+  // Новое состояние для хранения выбранного значения из RadioGroup
+  // Инициализируем его в 1 по умолчанию
+  const [selectedValue, setSelectedValue] = useState(1);
+
   const imageMap = {
     '-1': imageMinus1,
     '0': image0,
     '1': image1,
   };
-
-  // Опционально: Загрузка картинок с бэкенда.
-  // Если вы хотите грузить URL картинок с бэкенда,
-  // вам понадобится состояние для их хранения и useEffect для загрузки.
-  /*
-  const [remoteImageUrls, setRemoteImageUrls] = useState({});
-  useEffect(() => {
-    const fetchImageUrls = async () => {
-      try {
-        const response = await fetch('/api/images'); // Ваш эндпоинт на бэкенде для картинок
-        if (response.ok) {
-          const data = await response.json();
-          setRemoteImageUrls(data); // Ожидаем { "-1": "url1", "0": "url2", "1": "url3" }
-        } else {
-          console.error('Failed to fetch image URLs from backend');
-        }
-      } catch (error) {
-        console.error('Network error while fetching image URLs:', error);
-      }
-    };
-    fetchImageUrls();
-  }, []);
-  // Тогда в JSX вы бы использовали imageMap['-1'] = remoteImageUrls['-1']
-  // или сделали бы проверку if (remoteImageUrls['0']) { ... }
-  */
-
 
   const sendRequest = async (currentMatrix, clickedValue) => {
     const requestBody = {
@@ -68,6 +44,8 @@ const TableWithImages = () => {
       if (response.ok) {
         const data = await response.json();
         console.log('Данные успешно отправлены. Ответ сервера:', data);
+        // Можно обновить матрицу из ответа сервера, если это необходимо
+        // setMatrix(data.updatedMatrix); // Пример
         alert('Запрос успешно отправлен!');
       } else {
         const errorText = await response.text();
@@ -81,7 +59,7 @@ const TableWithImages = () => {
   };
 
   const handleCellClick = (rowIndex, colIndex) => {
-    // Разрешаем клик только по ячейкам со значением 0
+    // Клик разрешен только по ячейкам со значением 0
     if (matrix[rowIndex][colIndex] !== 0) {
       console.log(`Ячейка [${rowIndex}][${colIndex}] со значением ${matrix[rowIndex][colIndex]} некликабельна.`);
       alert('Клик разрешен только по ячейкам со значением 0!');
@@ -89,20 +67,51 @@ const TableWithImages = () => {
     }
 
     const newMatrix = matrix.map(row => [...row]);
-    // Изменяем значение ячейки с 0 на 1 при клике
-    newMatrix[rowIndex][colIndex] = 1;
+    // Устанавливаем значение ячейки согласно выбранному в RadioGroup
+    newMatrix[rowIndex][colIndex] = selectedValue; // Используем selectedValue
 
     setMatrix(newMatrix);
 
-    // Целое число для параметра (например, само значение ячейки до изменения)
-    const clickedValue = 0; // Или любое другое число, которое вам нужно передать как параметр
+    // В качестве параметра передаем старое значение ячейки (0)
+    // или другое значение, которое вам нужно
+    const valueToSend = 0; // Или selectedValue, в зависимости от вашей логики
+    sendRequest(newMatrix, valueToSend);
+  };
 
-    sendRequest(newMatrix, clickedValue);
+  // Обработчик изменения значения RadioGroup
+  const handleRadioChange = (event) => {
+    // Преобразуем значение из строки в число
+    setSelectedValue(parseInt(event.target.value, 10));
   };
 
   return (
     <div className="table-container">
       <h2>Таблица с картинками</h2>
+
+      <div className="radio-group-container">
+        <h3>Выберите значение для установки:</h3>
+        <label>
+          <input
+            type="radio"
+            name="cellValue"
+            value="1"
+            checked={selectedValue === 1}
+            onChange={handleRadioChange}
+          />
+          Установить 1
+        </label>
+        <label>
+          <input
+            type="radio"
+            name="cellValue"
+            value="-1"
+            checked={selectedValue === -1}
+            onChange={handleRadioChange}
+          />
+          Установить -1
+        </label>
+      </div>
+
       <table>
         <tbody>
           {matrix.map((row, rowIndex) => (
@@ -111,14 +120,12 @@ const TableWithImages = () => {
                 <td
                   key={`${rowIndex}-${colIndex}`}
                   onClick={() => handleCellClick(rowIndex, colIndex)}
-                  // Добавляем класс 'clickable' только для ячеек со значением 0,
-                  // чтобы стилизовать курсор и т.д.
+                  // Класс 'clickable' только для ячеек со значением 0
                   className={cellValue === 0 ? 'clickable' : ''}
                   // Отключаем pointer-events для некликабельных ячеек
                   style={{ pointerEvents: cellValue === 0 ? 'auto' : 'none' }}
                 >
                   <img
-                    // Выбираем изображение в зависимости от значения ячейки
                     src={imageMap[cellValue.toString()]}
                     alt={`Cell value: ${cellValue}`}
                   />
@@ -128,7 +135,9 @@ const TableWithImages = () => {
           ))}
         </tbody>
       </table>
+      
       <p>Текущая матрица (для отладки): {JSON.stringify(matrix)}</p>
+      <p>Выбранное значение для установки: {selectedValue}</p> {/* Для отладки */}
     </div>
   );
 };
