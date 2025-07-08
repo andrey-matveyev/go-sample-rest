@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 )
 
@@ -11,6 +12,17 @@ import (
 type RequestBody struct {
 	Matrix [][]int `json:"matrix"`
 	Value  int     `json:"value"`
+}
+
+// RequestBody для запроса новой матрицы
+type GetNewMatrixRequest struct {
+	Value int `json:"value"`
+}
+
+// ResponseBody для ответа с новой матрицей
+type GetNewMatrixResponse struct {
+	Matrix  [][]int `json:"matrix"`
+	Message string  `json:"message"`
 }
 
 func tableDataHandler(w http.ResponseWriter, r *http.Request) {
@@ -53,6 +65,44 @@ func tableDataHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Данные успешно получены на сервере!"})
 }
 
+func getNewMatrixHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Метод не разрешен. Ожидается POST.", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var requestData GetNewMatrixRequest
+	err := json.NewDecoder(r.Body).Decode(&requestData)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Некорректный JSON-формат запроса: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("Получен запрос на новую матрицу с value: %d", requestData.Value)
+
+	// --- Ваша логика генерации новой матрицы ---
+	// Пример: сгенерируем случайную матрицу 3x3 со значениями -1, 0, 1
+	newMatrix := make([][]int, 3)
+	for i := range newMatrix {
+		newMatrix[i] = make([]int, 3)
+		for j := range newMatrix[i] {
+			// Случайное число от -1 до 1
+			randVal := rand.Intn(3) - 1 // Генерирует 0, 1, 2, затем преобразует в -1, 0, 1
+			newMatrix[i][j] = randVal
+		}
+	}
+	// --- Конец логики генерации ---
+
+	responseBody := GetNewMatrixResponse{
+		Matrix:  newMatrix,
+		Message: fmt.Sprintf("Новая матрица успешно сгенерирована на сервере с запросом value %d!", requestData.Value),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(responseBody)
+}
+
 func main() {
 	// Устанавливаем CORS-заголовки
 	corsHandler := func(next http.Handler) http.Handler {
@@ -69,6 +119,7 @@ func main() {
 	}
 
 	http.Handle("/api/table-data", corsHandler(http.HandlerFunc(tableDataHandler)))
+	http.Handle("/api/get-new-matrix", corsHandler(http.HandlerFunc(getNewMatrixHandler))) // <-- Новый маршрут
 
 	log.Println("Сервер запущен на :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
