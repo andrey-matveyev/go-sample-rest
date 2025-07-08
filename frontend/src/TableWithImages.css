@@ -82,3 +82,24 @@ td img {
   margin-right: 15px;
   transform: scale(1.2); /* Увеличиваем размер радио-кнопок */
 }
+
+/* Добавьте эти новые стили */
+.fetch-matrix-button {
+  margin-bottom: 20px;
+  padding: 10px 20px;
+  font-size: 1.1em;
+  color: white;
+  background-color: #28a745; /* Зеленый цвет для кнопки */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.fetch-matrix-button:hover {
+  background-color: #218838; /* Темнее при наведении */
+}
+
+.fetch-matrix-button:active {
+  background-color: #1e7e34;
+}

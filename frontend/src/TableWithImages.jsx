@@ -7,16 +7,13 @@ import image0 from './assets/image-0.png';
 import image1 from './assets/image-1.png';
 
 const TableWithImages = () => {
-  // Инициализируем матрицу нулями
   const [matrix, setMatrix] = useState([
     [0, 0, 0],
     [0, 0, 0],
     [0, 0, 0],
   ]);
 
-  // Новое состояние для хранения выбранного значения из RadioGroup
-  // Инициализируем его в 1 по умолчанию
-  const [selectedValue, setSelectedValue] = useState(1);
+  const [selectedValue, setSelectedValue] = useState(1); // Состояние для RadioGroup
 
   const imageMap = {
     '-1': imageMinus1,
@@ -24,10 +21,51 @@ const TableWithImages = () => {
     '1': image1,
   };
 
+  // --- Новая функция для отправки POST-запроса на получение новой матрицы ---
+  const fetchNewMatrix = async () => {
+    const requestBody = {
+      value: 1, // Отправляем int = 1, как договорились
+    };
+
+    const url = '/api/get-new-matrix'; // Новый эндпоинт для этого запроса
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Ожидаем, что ответ будет содержать поля 'matrix' и 'message'
+        if (data.matrix && Array.isArray(data.matrix) && data.message) {
+          setMatrix(data.matrix); // Обновляем матрицу полученной с сервера
+          alert(`Матрица обновлена! Сообщение от сервера: ${data.message}`);
+          console.log('Новая матрица получена:', data.matrix);
+        } else {
+          console.error('Некорректный формат ответа от сервера:', data);
+          alert('Получен некорректный формат данных от сервера!');
+        }
+      } else {
+        const errorText = await response.text();
+        console.error('Ошибка при получении новой матрицы:', response.status, response.statusText, errorText);
+        alert(`Ошибка при получении новой матрицы: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Произошла ошибка сети при запросе новой матрицы:', error);
+      alert('Произошла ошибка сети при запросе новой матрицы!');
+    }
+  };
+  // --- Конец новой функции ---
+
+
   const sendRequest = async (currentMatrix, clickedValue) => {
     const requestBody = {
       matrix: currentMatrix,
-      value: clickedValue, // Это значение, которое было в кликнутой ячейке до изменения (т.е. 0)
+      value: clickedValue,
     };
 
     const url = '/api/table-data';
@@ -44,8 +82,6 @@ const TableWithImages = () => {
       if (response.ok) {
         const data = await response.json();
         console.log('Данные успешно отправлены. Ответ сервера:', data);
-        // Можно обновить матрицу из ответа сервера, если это необходимо
-        // setMatrix(data.updatedMatrix); // Пример
         alert('Запрос успешно отправлен!');
       } else {
         const errorText = await response.text();
@@ -59,7 +95,6 @@ const TableWithImages = () => {
   };
 
   const handleCellClick = (rowIndex, colIndex) => {
-    // Клик разрешен только по ячейкам со значением 0
     if (matrix[rowIndex][colIndex] !== 0) {
       console.log(`Ячейка [${rowIndex}][${colIndex}] со значением ${matrix[rowIndex][colIndex]} некликабельна.`);
       alert('Клик разрешен только по ячейкам со значением 0!');
@@ -67,26 +102,27 @@ const TableWithImages = () => {
     }
 
     const newMatrix = matrix.map(row => [...row]);
-    // Устанавливаем значение ячейки согласно выбранному в RadioGroup
-    newMatrix[rowIndex][colIndex] = selectedValue; // Используем selectedValue
+    newMatrix[rowIndex][colIndex] = selectedValue;
 
     setMatrix(newMatrix);
 
-    // В качестве параметра передаем старое значение ячейки (0)
-    // или другое значение, которое вам нужно
-    const valueToSend = 0; // Или selectedValue, в зависимости от вашей логики
+    const valueToSend = 0;
     sendRequest(newMatrix, valueToSend);
   };
 
-  // Обработчик изменения значения RadioGroup
   const handleRadioChange = (event) => {
-    // Преобразуем значение из строки в число
     setSelectedValue(parseInt(event.target.value, 10));
   };
 
   return (
     <div className="table-container">
       <h2>Таблица с картинками</h2>
+
+      {/* --- Новая кнопка здесь --- */}
+      <button onClick={fetchNewMatrix} className="fetch-matrix-button">
+        Получить новую матрицу
+      </button>
+      {/* --- Конец новой кнопки --- */}
 
       <div className="radio-group-container">
         <h3>Выберите значение для установки:</h3>
@@ -120,9 +156,7 @@ const TableWithImages = () => {
                 <td
                   key={`${rowIndex}-${colIndex}`}
                   onClick={() => handleCellClick(rowIndex, colIndex)}
-                  // Класс 'clickable' только для ячеек со значением 0
                   className={cellValue === 0 ? 'clickable' : ''}
-                  // Отключаем pointer-events для некликабельных ячеек
                   style={{ pointerEvents: cellValue === 0 ? 'auto' : 'none' }}
                 >
                   <img
@@ -135,9 +169,8 @@ const TableWithImages = () => {
           ))}
         </tbody>
       </table>
-      
       <p>Текущая матрица (для отладки): {JSON.stringify(matrix)}</p>
-      <p>Выбранное значение для установки: {selectedValue}</p> {/* Для отладки */}
+      <p>Выбранное значение для установки: {selectedValue}</p>
     </div>
   );
 };
