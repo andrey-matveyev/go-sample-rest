@@ -12,34 +12,41 @@ table {
 }
 
 td {
-  width: 120px; /* Фиксированная ширина ячейки */
-  height: 120px; /* Фиксированная высота ячейки */
+  width: 120px;
+  height: 120px;
   border: 2px solid #ccc;
-  /* Убрали display: flex */
-  text-align: center;      /* Центрируем содержимое по горизонтали */
-  vertical-align: middle;  /* Центрируем содержимое по вертикали */
-  cursor: pointer;
+  text-align: center;
+  vertical-align: middle;
+  /* cursor: pointer;  // Убираем отсюда, будем применять условно */
   transition: background-color 0.2s ease-in-out;
+}
+
+/* Стили для кликабельных ячеек (только со значением 0) */
+td.clickable {
+  cursor: pointer;
+}
+
+/* Стили для некликабельных ячеек (значения -1 и 1) */
+td:not(.clickable) {
+  cursor: not-allowed;
+  opacity: 0.7; /* Визуально затемним неактивные ячейки */
 }
 
 td:hover {
   background-color: #f0f0f0;
 }
 
-td.selected {
-  border: 2px solid #007bff;
-  background-color: #e6f2ff;
-  cursor: not-allowed;
-  opacity: 0.7;
-}
+/* Стили для "выбранных" ячеек (те, которые стали 1) */
+/* Мы используем класс clickable, чтобы управлять курсором.
+   Если ячейка становится 1, она уже не clickable. */
+/* Но если вы хотите сохранить визуальный отклик, когда ячейка стала 1,
+   можете добавить класс на основе cellValue, например 'value-1' */
+/* В текущей реализации, ячейки со значением 1 будут просто выглядеть как некликабельные */
 
-td.selected:hover {
-  background-color: #e6f2ff;
-}
 
 td img {
   max-width: 100px;
   max-height: 100px;
-  display: block; /* Сделать изображение блочным, чтобы margin: auto работало */
-  margin: auto;   /* Центрирование блочного изображения по горизонтали */
+  display: block;
+  margin: auto;
 }
