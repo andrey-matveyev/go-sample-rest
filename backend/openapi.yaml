@@ -1,0 +1,167 @@
+# yaml-language-server: $schema=https://json-schema.org/draft/2020-12/schema
+openapi: 3.0.3 
+info:
+  title: REST API in Go 
+  version: 1.0.0 
+  description: API for playing tic-tac-toe
+
+servers:
+  - url: http://localhost:8080 
+    description: Local development server
+
+paths:
+  /api/v1/new-board/{player}: 
+    post:
+      summary: Request a new board from the server
+      description: Returns a clean board for player "1" or a board with the first move for player "-1"
+      parameters: 
+      - in: path
+        name: player 
+        schema:
+          type: integer 
+          format: int32
+          enum:
+          - 1
+          - -1
+        required: true
+        description: Unique player identifier
+        example: 1 
+      responses:
+        '200':
+          description: New board and idGame from the server
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  board:
+                    type: array
+                    minItems: 3
+                    maxItems: 3
+                    items:
+                      type: array
+                      minItems: 3
+                      maxItems: 3
+                      items:
+                        type: integer
+                        format: int32
+                        enum:
+                        - 1
+                        - 0
+                        - -1
+                  idGame:
+                    type: integer
+                    format: int32
+                  gameOver:
+                    type: boolean
+              examples:
+                player -1:
+                  description: Example new board for player "-1"
+                  value: 
+                    board: [[0, 0, 0], [0, 1, 0], [0, 0, 0]]
+                    idGame: 42
+                    gameOver: false
+                player 1:
+                  description: New board for player "1"
+                  value: 
+                    board: [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+                    idGame: 42
+                    gameOver: false
+        '400':
+          description: Incorrect request
+        '500':
+          description: Internal Server Error
+
+  /api/v1/make-move/{player}: 
+    post: 
+      summary: Send player's move to server
+      description: Returns board with next move, gameOver and win-player
+      parameters: 
+      - in: path
+        name: player 
+        schema:
+          type: integer 
+          format: int32
+          enum:
+          - 1
+          - -1
+        required: true
+        description: Unique player identifier
+        example: 1 
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                board:
+                  type: array
+                  minItems: 3
+                  maxItems: 3
+                  items:
+                    type: array
+                    minItems: 3
+                    maxItems: 3
+                    items:
+                      type: integer
+                      format: int32
+                      enum:
+                      - 1
+                      - 0
+                      - -1
+                idGame:
+                  type: integer
+                  format: int32
+              example: 
+                board: [[0, 0, 0], [0, 1, 0], [-1, 0, 0]]
+                idGame: 42
+      responses:
+        '200':
+          description: Board with next move from the server
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  board:
+                    type: array
+                    minItems: 3
+                    maxItems: 3
+                    items:
+                      type: array
+                      minItems: 3
+                      maxItems: 3
+                      items:
+                        type: integer
+                        format: int32
+                        enum:
+                        - 1
+                        - 0
+                        - -1
+                  idGame:
+                    type: integer
+                    format: int32
+                  gameOver:
+                    type: boolean
+                  winPlayer:
+                    type: integer
+                    format: int32
+              examples:
+                game continues:
+                  value: 
+                    board: [[0, 0, 0], [0, 1, -1], [0, 0, 0]]
+                    idGame: 42
+                    gameOver: false
+                    winPlayer: 0
+                game over:
+                  value:
+                    board: [[1, -1, -1], [1, 1, -1], [1, 0, 0]]
+                    idGame: 42
+                    gameOver: true
+                    winPlayer: 1
+                  
+        '400':
+          description: Incorrect request
+        '500':
+          description: Internal Server Error
