@@ -4,123 +4,211 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
+	"math/rand" // Для rand.Seed
 	"net/http"
+	"strconv" // Добавляем импорт для конвертации строки в число
+	"time"    // Для rand.Seed
+
+	"github.com/go-chi/chi/v5"            // Импортируем Chi роутер
+	"github.com/go-chi/chi/v5/middleware" // Опционально: встроенный middleware Chi
 )
 
-// RequestBody определяет структуру ожидаемого JSON-тела запроса
-type RequestBody struct {
-	Matrix [][]int `json:"matrix"`
-	Value  int     `json:"value"`
+// --- ОБНОВЛЕННЫЕ СТРУКТУРЫ ДАННЫХ В СООТВЕТСТВИИ С OPENAPI ---
+// Для запроса нового поля /api/v1/new-board/{player}
+type NewBoardResponse struct {
+	Board    [][]int `json:"board"`
+	IdGame   int     `json:"idGame"`
+	GameOver bool    `json:"gameOver"`
 }
 
-// RequestBody для запроса новой матрицы
-type GetNewMatrixRequest struct {
-	Value int `json:"value"`
+// Для запроса хода /api/v1/make-move/{player}
+type MakeMoveRequest struct {
+	Board  [][]int `json:"board"`
+	IdGame int     `json:"idGame"`
 }
 
-// ResponseBody для ответа с новой матрицей
-type GetNewMatrixResponse struct {
-	Matrix  [][]int `json:"matrix"`
-	Message string  `json:"message"`
+// Для ответа на ход /api/v1/make-move/{player}
+type MakeMoveResponse struct {
+	Board     [][]int `json:"board"`
+	IdGame    int     `json:"idGame"`
+	GameOver  bool    `json:"gameOver"`
+	WinPlayer int     `json:"winPlayer"` // 0 - ничья, 1 или -1 - победитель
 }
 
-func tableDataHandler(w http.ResponseWriter, r *http.Request) {
-	// Проверяем, что это POST-запрос
-	if r.Method != http.MethodPost {
-		http.Error(w, "Метод не разрешен. Ожидается POST.", http.StatusMethodNotAllowed)
-		return
+// --- КОНЕЦ ОБНОВЛЕННЫХ СТРУКТУР ---
+
+// --- ВАША БИЗНЕС-ЛОГИКА (PLACEHOLDER) ---
+// Это ваша функция бизнес-логики, которую вы затем замените реальной.
+// Пока она будет просто возвращать тестовые данные.
+// board: текущая доска
+// player: игрок, который только что сделал ход (1 или -1)
+// Возвращает:
+//
+//	nextBoard: доска после хода компьютера/ответа сервера
+//	gameOverStatus: 0 - игра продолжается, 1 - победа, -1 - ничья
+//	winningPlayer: 0 - никто не победил/ничья, 1 или -1 - победивший игрок
+func processGameMove(currentBoard [][]int, playerMakingMove int) (nextBoard [][]int, gameOverStatus int, winningPlayer int) {
+	// --- ЗАМЕНИТЕ ЭТО ВАШЕЙ РЕАЛЬНОЙ ЛОГИКОЙ ---
+	log.Printf("Бизнес-логика: Обрабатывается ход игрока %d. Текущая доска: %+v", playerMakingMove, currentBoard)
+
+	// Пример: Просто делаем "ход" в случайную пустую ячейку (для тестирования)
+	nextBoard = make([][]int, 3)
+	for i := range currentBoard {
+		nextBoard[i] = make([]int, 3)
+		copy(nextBoard[i], currentBoard[i])
 	}
 
-	// Декодируем JSON-тело запроса
-	var requestData RequestBody
-	err := json.NewDecoder(r.Body).Decode(&requestData)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Некорректный JSON-формат запроса: %v", err), http.StatusBadRequest)
-		return
+	// Найдем случайную пустую ячейку для тестового хода
+	emptyCells := [][]int{}
+	for r := 0; r < 3; r++ {
+		for c := 0; c < 3; c++ {
+			if nextBoard[r][c] == 0 {
+				emptyCells = append(emptyCells, []int{r, c})
+			}
+		}
 	}
 
-	// Дополнительная валидация (опционально):
-	// Проверяем, что матрица имеет размер 3x3
-	if len(requestData.Matrix) != 3 {
-		http.Error(w, "Матрица должна быть 3x3", http.StatusBadRequest)
-		return
+	if len(emptyCells) > 0 {
+		randomIndex := rand.Intn(len(emptyCells))
+		randomCell := emptyCells[randomIndex]
+		// Отвечает игрок, противоположный тому, кто прислал запрос
+		opponentPlayer := -playerMakingMove
+		nextBoard[randomCell[0]][randomCell[1]] = opponentPlayer
 	}
-	for _, row := range requestData.Matrix {
-		if len(row) != 3 {
-			http.Error(w, "Каждая строка матрицы должна содержать 3 элемента", http.StatusBadRequest)
+
+	// Пример: Игра продолжается, пока не заполнены все ячейки
+	isBoardFull := true
+	for r := 0; r < 3; r++ {
+		for c := 0; c < 3; c++ {
+			if nextBoard[r][c] == 0 {
+				isBoardFull = false
+				break
+			}
+		}
+		if !isBoardFull {
+			break
+		}
+	}
+
+	if isBoardFull {
+		log.Println("Бизнес-логика: Доска заполнена, ничья.")
+		return nextBoard, 0, 0 // Ничья
+	}
+
+	log.Println("Бизнес-логика: Игра продолжается.")
+	return nextBoard, -1, 0 // Игра продолжается
+	// --- КОНЕЦ PLACEHOLDER ЛОГИКИ ---
+}
+
+// --- КОНЕЦ ВАШЕЙ БИЗНЕС-ЛОГИКИ ---
+
+// corsMiddleware - применяем его ко всем маршрутам через r.Use()
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
 			return
 		}
-	}
-
-	log.Printf("Получена матрица: %+v", requestData.Matrix)
-	log.Printf("Получен параметр (целое число): %d", requestData.Value)
-
-	// Здесь можно обрабатывать полученные данные
-	// Например, сохранить их в базу данных, выполнить какую-то логику и т.д.
-
-	// Отправляем ответ клиенту
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Данные успешно получены на сервере!"})
+		next.ServeHTTP(w, r)
+	})
 }
 
-func getNewMatrixHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Метод не разрешен. Ожидается POST.", http.StatusMethodNotAllowed)
+// --- НОВЫЙ ХЭНДЛЕР: POST /api/v1/new-board/{player} ---
+func newBoardHandler(w http.ResponseWriter, r *http.Request) {
+	playerStr := chi.URLParam(r, "player") // Извлекаем параметр из URL с помощью Chi
+	player, err := strconv.Atoi(playerStr)
+	if err != nil || (player != 1 && player != -1) {
+		http.Error(w, "Некорректное значение 'player' в URL-пути. Ожидается 1 или -1.", http.StatusBadRequest)
 		return
 	}
 
-	var requestData GetNewMatrixRequest
-	err := json.NewDecoder(r.Body).Decode(&requestData)
+	newBoard := make([][]int, 3)
+	for i := range newBoard {
+		newBoard[i] = make([]int, 3)
+	}
+
+	// Если игрок -1, делаем первый ход (например, в центр)
+	if player == -1 {
+		newBoard[1][1] = 1 // Например, сервер делает первый ход 1
+		log.Printf("Сгенерирована новая доска для игрока %d с первым ходом сервера.", player)
+	} else {
+		log.Printf("Сгенерирована новая пустая доска для игрока %d.", player)
+	}
+
+	response := NewBoardResponse{
+		Board:    newBoard,
+		IdGame:   rand.Intn(1000), // Просто случайный ID игры для примера
+		GameOver: false,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// --- НОВЫЙ ХЭНДЛЕР: POST /api/v1/make-move/{player} ---
+func makeMoveHandler(w http.ResponseWriter, r *http.Request) {
+	playerStr := chi.URLParam(r, "player")
+	player, err := strconv.Atoi(playerStr)
+	if err != nil || (player != 1 && player != -1) {
+		http.Error(w, "Некорректное значение 'player' в URL-пути. Ожидается 1 или -1.", http.StatusBadRequest)
+		return
+	}
+
+	var requestBody MakeMoveRequest
+	err = json.NewDecoder(r.Body).Decode(&requestBody)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Некорректный JSON-формат запроса: %v", err), http.StatusBadRequest)
 		return
 	}
 
-	log.Printf("Получен запрос на новую матрицу с value: %d", requestData.Value)
+	log.Printf("Получен ход от игрока %d. IdGame: %d, Доска: %+v", player, requestBody.IdGame, requestBody.Board)
 
-	// --- Ваша логика генерации новой матрицы ---
-	// Пример: сгенерируем случайную матрицу 3x3 со значениями -1, 0, 1
-	newMatrix := make([][]int, 3)
-	for i := range newMatrix {
-		newMatrix[i] = make([]int, 3)
-		for j := range newMatrix[i] {
-			// Случайное число от -1 до 1
-			randVal := rand.Intn(3) - 1 // Генерирует 0, 1, 2, затем преобразует в -1, 0, 1
-			newMatrix[i][j] = randVal
-		}
+	// --- ВЫЗЫВАЕМ ВАШУ БИЗНЕС-ЛОГИКУ ---
+	// Здесь вы подставите вызов вашей функции, которая обработает ход.
+	// Она должна вернуть новую доску, статус игры и победителя.
+	nextBoard, gameOverStatus, winningPlayer := processGameMove(requestBody.Board, player)
+	// --- КОНЕЦ ВЫЗОВА БИЗНЕС-ЛОГИКИ ---
+
+	gameOver := false
+	if gameOverStatus != -1 { // -1 означает, что игра продолжается
+		gameOver = true
 	}
-	// --- Конец логики генерации ---
 
-	responseBody := GetNewMatrixResponse{
-		Matrix:  newMatrix,
-		Message: fmt.Sprintf("Новая матрица успешно сгенерирована на сервере с запросом value %d!", requestData.Value),
+	response := MakeMoveResponse{
+		Board:     nextBoard,
+		IdGame:    requestBody.IdGame, // ID игры остается тем же
+		GameOver:  gameOver,
+		WinPlayer: winningPlayer,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(responseBody)
+	json.NewEncoder(w).Encode(response)
 }
 
 func main() {
-	// Устанавливаем CORS-заголовки
-	corsHandler := func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Access-Control-Allow-Origin", "*")              // Разрешить запросы с любого домена
-			w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS") // Разрешаем POST и OPTIONS
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")  // Разрешаем заголовок Content-Type
-			if r.Method == http.MethodOptions {
-				w.WriteHeader(http.StatusOK)
-				return
-			}
-			next.ServeHTTP(w, r)
-		})
-	}
+	rand.Seed(time.Now().UnixNano()) // Инициализация генератора случайных чисел
 
-	http.Handle("/api/table-data", corsHandler(http.HandlerFunc(tableDataHandler)))
-	http.Handle("/api/get-new-matrix", corsHandler(http.HandlerFunc(getNewMatrixHandler))) // <-- Новый маршрут
+	r := chi.NewRouter() // Создаем новый Chi роутер
 
-	log.Println("Сервер запущен на :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	// Middleware для всех маршрутов
+	r.Use(middleware.Logger) // Логирование запросов
+	r.Use(corsMiddleware)    // Наш CORS middleware
+
+	// --- РЕГИСТРАЦИЯ НОВЫХ МАРШРУТОВ И ХЭНДЛЕРОВ ---
+	r.Post("/api/v1/new-board/{player}", newBoardHandler)
+	r.Options("/api/v1/new-board/{player}", newBoardHandler) // Для CORS preflight
+
+	r.Post("/api/v1/make-move/{player}", makeMoveHandler)
+	r.Options("/api/v1/make-move/{player}", makeMoveHandler) // Для CORS preflight
+	// --- КОНЕЦ РЕГИСТРАЦИИ МАРШРУТОВ ---
+
+	// Запуск сервера (используем HTTP для простоты локальной разработки,
+	// потом можно легко переключить на HTTPS, как обсуждали ранее)
+	log.Println("Сервер запущен на HTTP по порту :8080")
+	log.Fatal(http.ListenAndServe(":8080", r)) // Передаем роутер 'r'
+	// Если хотите HTTPS, замените на:
+	// log.Fatal(http.ListenAndServeTLS(":8443", certFile, keyFile, r))
 }
