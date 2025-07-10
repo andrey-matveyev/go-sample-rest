@@ -8,7 +8,6 @@ import (
 	"math/rand" // Для rand.Seed
 	"net/http"
 	"strconv" // Добавляем импорт для конвертации строки в число
-	"time"    // Для rand.Seed
 
 	"github.com/go-chi/chi/v5"            // Импортируем Chi роутер
 	"github.com/go-chi/chi/v5/middleware" // Опционально: встроенный middleware Chi
@@ -189,11 +188,11 @@ func makeMoveHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func main() {
-	cfg := config.ReadConfig("./cfg/config.yaml")
-	log.Println("Config: ", cfg)
+const configFile string = "./cfg/config.yaml"
 
-	rand.Seed(time.Now().UnixNano()) // Инициализация генератора случайных чисел
+func main() {
+	cfg := config.ReadConfig(configFile)
+	log.Println("Config: ", cfg)
 
 	r := chi.NewRouter() // Создаем новый Chi роутер
 
