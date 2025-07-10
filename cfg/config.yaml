@@ -10,9 +10,3 @@ logger:
   destination-file: ""   # filename if destination = "file"
   level: "debug"         # "debug", "info"
   add_source: false
-logger:
-  format: "text"         # "text", "json"
-  destination: "console" # "console", "file"
-  destination-file: ""   # filename if destination = "file"
-  level: "debug"         # "debug", "info"
-  add_source: false
