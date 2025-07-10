@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"main/internal/config"
 	"math/rand" // Для rand.Seed
 	"net/http"
 	"strconv" // Добавляем импорт для конвертации строки в число
@@ -189,6 +190,9 @@ func makeMoveHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	cfg := config.ReadConfig("./cfg/config.yaml")
+	log.Println("Config: ", cfg)
+
 	rand.Seed(time.Now().UnixNano()) // Инициализация генератора случайных чисел
 
 	r := chi.NewRouter() // Создаем новый Chi роутер
