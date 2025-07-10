@@ -43,5 +43,20 @@ func ReadConfig(path string) *Config {
 		log.Fatalf("cannot read config: %s", err)
 	}
 
+	log.Printf("---- CURRENT CONFIGURATION ----\n")
+	log.Printf("environment:        %s\n", cfg.Environment)
+	log.Printf("repository-file:    %s\n", cfg.RepositoryFile)
+	log.Printf("http-server \n")
+	log.Printf("- address:          %s\n", cfg.Address)
+	log.Printf("- timeout:          %s\n", cfg.Timeout)
+	log.Printf("- idle-timeout:     %s\n", cfg.IdleTimeout)
+	log.Printf("logger \n")
+	log.Printf("- format:           %s\n", cfg.Format)
+	log.Printf("- destination:      %s\n", cfg.Destination)
+	log.Printf("- destination-file: %s\n", cfg.DestinationFile)
+	log.Printf("- level:            %s\n", cfg.Level)
+	log.Printf("- add-source:       %t\n", cfg.AddSource)
+	log.Printf("-------------------------------\n")
+
 	return &cfg
 }
