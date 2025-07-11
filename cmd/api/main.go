@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"main/internal/config"
+	"main/internal/logger"
 	"math/rand" // Для rand.Seed
 	"net/http"
 	"strconv" // Добавляем импорт для конвертации строки в число
@@ -192,7 +193,7 @@ const configFile string = "./cfg/config.yaml"
 
 func main() {
 	cfg := config.ReadConfig(configFile)
-	log.Println("Config: ", cfg)
+	logger.SetupDefaultLogger(cfg)
 
 	r := chi.NewRouter() // Создаем новый Chi роутер
 

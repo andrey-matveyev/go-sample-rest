@@ -10,7 +10,7 @@ import (
 
 type Config struct {
 	Environment    string `yaml:"environment" env-default:"local"` // local, dev, prod
-	RepositoryFile string `yaml:"repository-file" env-required:"true"`
+	RepositoryFile string `yaml:"repository_file" env-required:"true"`
 	HTTPServer     `yaml:"http-server"`
 	Logger         `yaml:"logger"`
 }
@@ -18,15 +18,15 @@ type Config struct {
 type HTTPServer struct {
 	Address     string        `yaml:"address" env-default:"localhost:8080"`
 	Timeout     time.Duration `yaml:"timeout" env-default:"5s"`
-	IdleTimeout time.Duration `yaml:"idle-timeout" env-default:"60s"`
+	IdleTimeout time.Duration `yaml:"idle_timeout" env-default:"60s"`
 }
 
 type Logger struct {
 	Format          string `yaml:"format" nv-default:"text"`         // text, json
 	Destination     string `yaml:"destination" nv-default:"console"` // console, file
-	DestinationFile string `yaml:"destination-file" nv-default:""`   // filename if destination = file
+	DestinationFile string `yaml:"destination_file" nv-default:""`   // filename if destination = file
 	Level           string `yaml:"level" nv-default:"debug"`         // debug, info
-	AddSource       bool   `yaml:"add-source" nv-default:"false"`
+	AddSource       bool   `yaml:"add_source" nv-default:"false"`
 }
 
 // The function terminates the application with an error if the configuration file could not be loaded.
@@ -43,6 +43,12 @@ func ReadConfig(path string) *Config {
 		log.Fatalf("cannot read config: %s", err)
 	}
 
+	printConfig(cfg)
+
+	return &cfg
+}
+
+func printConfig(cfg Config) {
 	log.Printf("---- CURRENT CONFIGURATION ----\n")
 	log.Printf("environment:        %s\n", cfg.Environment)
 	log.Printf("repository-file:    %s\n", cfg.RepositoryFile)
@@ -57,6 +63,4 @@ func ReadConfig(path string) *Config {
 	log.Printf("- level:            %s\n", cfg.Level)
 	log.Printf("- add-source:       %t\n", cfg.AddSource)
 	log.Printf("-------------------------------\n")
-
-	return &cfg
 }

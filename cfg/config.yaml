@@ -1,12 +1,12 @@
 environment: "local" # "local", "dev", "prod"
-repository-file: "./repository/repository.db"
-http-server:
+repository_file: "./repository/repository.db"
+http_server:
   address: "localhost:8080"
   timeout: 5s
   idle_timeout: 60s
 logger:
   format: "text"         # "text", "json"
-  destination: "console" # "console", "file"
-  destination-file: ""   # filename if destination = "file"
+  destination: "stdout"  # "stdout", "stderr", "file"
+  destination_file: ""   # filename if <destination: "file">
   level: "debug"         # "debug", "info"
   add_source: false
