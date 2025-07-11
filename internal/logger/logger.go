@@ -9,6 +9,12 @@ import (
 	"os"
 )
 
+// The application sets up one global logger.
+// For each incoming request, the middleware then generates a request-specific logger
+// and embeds it within the context for that particular chain of operations
+//
+// more detail: https://dev.to/ilyakaznacheev/where-to-place-logger-in-golang-13o3
+
 const (
 	writerStdout = "stdout"
 	writerStderr = "stderr"
@@ -35,7 +41,7 @@ func SetupDefaultLogger(cfg *config.Config) {
 		WithFormat(cfg.Format),
 		WithWriter(writer),
 		WithAddSource(cfg.AddSource),
-		WithSetDefault(true),
+		WithSetDefault(true), // Set as default logger for application
 	)
 }
 
@@ -130,11 +136,15 @@ func NewLogFile(path string) *os.File {
 	return logFile
 }
 
-type ctxLoggerKey struct{}
+//type contextKey string
+
+const contextKey string = "ctxLogger"
+
+//type ctxLoggerKey struct{}
 
 // ContextWithLogger adds logger to context.
 func ContextWithLogger(ctx context.Context, logger *slog.Logger) context.Context {
-	return context.WithValue(ctx, ctxLoggerKey{}, logger)
+	return context.WithValue(ctx, contextKey, logger)
 }
 
 func CtxLogger(ctx context.Context) *slog.Logger {
@@ -143,7 +153,7 @@ func CtxLogger(ctx context.Context) *slog.Logger {
 
 // loggerFromContext returns logger from context.
 func loggerFromContext(ctx context.Context) *slog.Logger {
-	if logger, ok := ctx.Value(ctxLoggerKey{}).(*slog.Logger); ok {
+	if logger, ok := ctx.Value(contextKey).(*slog.Logger); ok {
 		return logger
 	}
 

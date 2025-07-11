@@ -6,12 +6,12 @@ import (
 	"log"
 	"main/internal/config"
 	"main/internal/logger"
+	"main/internal/middleware"
 	"math/rand" // Для rand.Seed
 	"net/http"
 	"strconv" // Добавляем импорт для конвертации строки в число
 
-	"github.com/go-chi/chi/v5"            // Импортируем Chi роутер
-	"github.com/go-chi/chi/v5/middleware" // Опционально: встроенный middleware Chi
+	"github.com/go-chi/chi/v5" // Импортируем Chi роутер
 )
 
 // --- ОБНОВЛЕННЫЕ СТРУКТУРЫ ДАННЫХ В СООТВЕТСТВИИ С OPENAPI ---
@@ -103,20 +103,6 @@ func processGameMove(currentBoard [][]int, playerMakingMove int) (nextBoard [][]
 
 // --- КОНЕЦ ВАШЕЙ БИЗНЕС-ЛОГИКИ ---
 
-// corsMiddleware - применяем его ко всем маршрутам через r.Use()
-func corsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
 // --- НОВЫЙ ХЭНДЛЕР: POST /api/v1/new-board/{player} ---
 func newBoardHandler(w http.ResponseWriter, r *http.Request) {
 	playerStr := chi.URLParam(r, "player") // Извлекаем параметр из URL с помощью Chi
@@ -198,8 +184,8 @@ func main() {
 	r := chi.NewRouter() // Создаем новый Chi роутер
 
 	// Middleware для всех маршрутов
-	r.Use(middleware.Logger) // Логирование запросов
-	r.Use(corsMiddleware)    // Наш CORS middleware
+	r.Use(middleware.LoggingMiddleware) // Логирование запросов
+	r.Use(middleware.CorsMiddleware)    // Наш CORS middleware
 
 	// --- РЕГИСТРАЦИЯ НОВЫХ МАРШРУТОВ И ХЭНДЛЕРОВ ---
 	r.Post("/api/v1/new-board/{player}", newBoardHandler)
