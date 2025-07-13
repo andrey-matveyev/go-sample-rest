@@ -11,11 +11,15 @@ import (
 func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctxLogger := slog.Default().With(
-			slog.String("RequestID", chi_mw.GetReqID(r.Context())), // depends on chi-middleware
-			slog.String("RequestURI", r.RequestURI),
 			slog.String("Method", r.Method),
+			slog.String("RequestURI", r.RequestURI),
+			slog.String("RequestID", chi_mw.GetReqID(r.Context())), // depends on chi-middleware
 		)
-		ctx := logger.ContextWithLogger(r.Context(), ctxLogger)
+		//ctx := context.WithValue(ctx, contextKey, logger)
+		ctx := r.Context()
+		ctx = logger.ContextWithLogger(ctx, ctxLogger)
+
+		//next.ServeHTTP(w, r.WithContext(ctx)) // logger in context
 		next.ServeHTTP(w, r.WithContext(ctx)) // logger in context
 	})
 }

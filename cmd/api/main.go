@@ -12,6 +12,7 @@ import (
 	"strconv" // Добавляем импорт для конвертации строки в число
 
 	"github.com/go-chi/chi/v5" // Импортируем Chi роутер
+	chi_mw "github.com/go-chi/chi/v5/middleware"
 )
 
 // --- ОБНОВЛЕННЫЕ СТРУКТУРЫ ДАННЫХ В СООТВЕТСТВИИ С OPENAPI ---
@@ -104,8 +105,14 @@ func processGameMove(currentBoard [][]int, playerMakingMove int) (nextBoard [][]
 // --- КОНЕЦ ВАШЕЙ БИЗНЕС-ЛОГИКИ ---
 
 // --- НОВЫЙ ХЭНДЛЕР: POST /api/v1/new-board/{player} ---
+//
+//go:noinline
 func newBoardHandler(w http.ResponseWriter, r *http.Request) {
 	playerStr := chi.URLParam(r, "player") // Извлекаем параметр из URL с помощью Chi
+	fmt.Printf("playerStr from newBoardHandler: %s\n", playerStr)
+	fmt.Printf("request_ptr: %p\n", r)
+	fmt.Printf("context_ptr: %p\n", r.Context)
+
 	player, err := strconv.Atoi(playerStr)
 	if err != nil || (player != 1 && player != -1) {
 		http.Error(w, "Некорректное значение 'player' в URL-пути. Ожидается 1 или -1.", http.StatusBadRequest)
@@ -184,17 +191,56 @@ func main() {
 	r := chi.NewRouter() // Создаем новый Chi роутер
 
 	// Middleware для всех маршрутов
+	r.Use(chi_mw.RequestID)             //
 	r.Use(middleware.LoggingMiddleware) // Логирование запросов
 	r.Use(middleware.CorsMiddleware)    // Наш CORS middleware
+	//r.Use(middleware.ValidationMiddleware) //
+	r.Route("/api/v1", func(r chi.Router) {
+		r.Route("/new-board/{player}", func(r chi.Router) {
+			r.Use(middleware.PlayerValidationMiddleware)
+			r.Post("/", newBoardHandler)
+			r.Options("/", newBoardHandler)
+		})
 
-	// --- РЕГИСТРАЦИЯ НОВЫХ МАРШРУТОВ И ХЭНДЛЕРОВ ---
-	r.Post("/api/v1/new-board/{player}", newBoardHandler)
-	r.Options("/api/v1/new-board/{player}", newBoardHandler) // Для CORS preflight
+	})
 
-	r.Post("/api/v1/make-move/{player}", makeMoveHandler)
-	r.Options("/api/v1/make-move/{player}", makeMoveHandler) // Для CORS preflight
-	// --- КОНЕЦ РЕГИСТРАЦИИ МАРШРУТОВ ---
+	/*
+		r.With(
+			middleware.PlayerValidationMiddleware,
+		).Post("/api/v1/new-board/{player}", newBoardHandler)
+		r.Options("/api/v1/new-board/{player}", newBoardHandler) // OPTIONS не нуждается в валидации player
 
+		r.With(
+			middleware.PlayerValidationMiddleware,
+			middleware.BoardValidationMiddleware,
+		).Post("/api/v1/make-move/{player}", makeMoveHandler)
+		r.Options("/api/v1/make-move/{player}", makeMoveHandler) // OPTIONS не нуждается в валидации тела
+	*/
+	/*
+		r.Route("/", func(r chi.Router) {
+			// Применяем PlayerValidationMiddleware здесь,
+			// чтобы 'player' был доступен в контексте для последующих обработчиков.
+			r.Route("/api/v1", func(r chi.Router) {
+				r.Use(middleware.PlayerValidationMiddleware)
+
+				// Маршрут для создания новой доски (использует player)
+				r.Post("/new-board/{player}", newBoardHandler)
+				r.Options("/new-board/{player}", newBoardHandler) // OPTIONS не нуждается в валидации player
+			})
+			// Маршрут для совершения хода (использует player и тело запроса)
+			//r.With(middleware.MoveBodyValidationMiddleware).Post("/api/v1/make-move/{player}", handlers.MakeMoveHandler)
+			//r.Options("/api/v1/make-move/{player}", handlers.MakeMoveHandler) // OPTIONS не нуждается в валидации тела
+		})
+	*/
+	/*
+		// --- РЕГИСТРАЦИЯ НОВЫХ МАРШРУТОВ И ХЭНДЛЕРОВ ---
+		r.Post("/api/v1/new-board/{player}", newBoardHandler)
+		r.Options("/api/v1/new-board/{player}", newBoardHandler) // Для CORS preflight
+
+		r.Post("/api/v1/make-move/{player}", makeMoveHandler)
+		r.Options("/api/v1/make-move/{player}", makeMoveHandler) // Для CORS preflight
+		// --- КОНЕЦ РЕГИСТРАЦИИ МАРШРУТОВ ---
+	*/
 	// Запуск сервера (используем HTTP для простоты локальной разработки,
 	// потом можно легко переключить на HTTPS, как обсуждали ранее)
 	log.Println("Сервер запущен на HTTP по порту :8080")
