@@ -12,7 +12,6 @@ import (
 	"strconv" // Добавляем импорт для конвертации строки в число
 
 	"github.com/go-chi/chi/v5" // Импортируем Chi роутер
-	chi_mw "github.com/go-chi/chi/v5/middleware"
 )
 
 // --- ОБНОВЛЕННЫЕ СТРУКТУРЫ ДАННЫХ В СООТВЕТСТВИИ С OPENAPI ---
@@ -183,6 +182,7 @@ func makeMoveHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 const configFile string = "./cfg/config.yaml"
+const requestIDprefix string = "ttt"
 
 func main() {
 	cfg := config.ReadConfig(configFile)
@@ -191,9 +191,9 @@ func main() {
 	r := chi.NewRouter() // Создаем новый Chi роутер
 
 	// Middleware для всех маршрутов
-	r.Use(chi_mw.RequestID)             //
-	r.Use(middleware.LoggingMiddleware) // Логирование запросов
-	r.Use(middleware.CorsMiddleware)    // Наш CORS middleware
+	r.Use(middleware.RequestIDMiddleware(requestIDprefix)) //
+	r.Use(middleware.LoggingMiddleware)                    // Логирование запросов
+	r.Use(middleware.CorsMiddleware)                       // Наш CORS middleware
 	//r.Use(middleware.ValidationMiddleware) //
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Route("/new-board/{player}", func(r chi.Router) {
@@ -201,7 +201,12 @@ func main() {
 			r.Post("/", newBoardHandler)
 			r.Options("/", newBoardHandler)
 		})
-
+		r.Route("/make-move/{player}", func(r chi.Router) {
+			r.Use(middleware.PlayerValidationMiddleware)
+			r.Use(middleware.BoardValidationMiddleware)
+			r.Post("/", newBoardHandler)
+			r.Options("/", newBoardHandler)
+		})
 	})
 
 	/*

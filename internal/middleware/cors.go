@@ -2,14 +2,13 @@ package middleware
 
 import (
 	"log/slog"
-	"main/internal/logger"
 	"net/http"
 )
 
 func CorsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		const op = "CorsMiddleware"
-		log := logger.CtxLogger(r.Context())
+		log := GetLoggerFromContext(r.Context())
 
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")

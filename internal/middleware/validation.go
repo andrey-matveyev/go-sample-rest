@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -9,14 +9,11 @@ import (
 
 func PlayerValidationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//const op = "ValidationMiddleware"
-		//log := logger.CtxLogger(r.Context())
+		const op = "PlayerValidationMiddleware"
+		log := GetLoggerFromContext(r.Context())
 
 		playerStr := chi.URLParam(r, "player")
-		//log.Info("ValidationMiddleware", slog.String("playerStr", playerStr))
-		fmt.Printf("playerStr from ValidationMiddleware: %s\n", playerStr)
-		fmt.Printf("request_ptr: %p\n", r)
-		fmt.Printf("context_ptr: %p\n", r.Context)
+		log.Info(op, slog.String("playerStr", playerStr))
 
 		next.ServeHTTP(w, r)
 	})

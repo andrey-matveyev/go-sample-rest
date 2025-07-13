@@ -1,25 +1,42 @@
 package middleware
 
 import (
+	"context"
 	"log/slog"
-	"main/internal/logger"
 	"net/http"
-
-	chi_mw "github.com/go-chi/chi/v5/middleware"
 )
+
+type ctxLoggerKeyType string
+
+const ctxLoggerKey ctxLoggerKeyType = "ctxLoggerKey"
 
 func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestID, ok := GetRequestIDFromContext(r.Context())
+		if !ok {
+			requestID = "no-request-id" // default value
+		}
 		ctxLogger := slog.Default().With(
 			slog.String("Method", r.Method),
 			slog.String("RequestURI", r.RequestURI),
-			slog.String("RequestID", chi_mw.GetReqID(r.Context())), // depends on chi-middleware
+			slog.String("RequestID", requestID),
 		)
-		//ctx := context.WithValue(ctx, contextKey, logger)
-		ctx := r.Context()
-		ctx = logger.ContextWithLogger(ctx, ctxLogger)
 
-		//next.ServeHTTP(w, r.WithContext(ctx)) // logger in context
+		ctx := context.WithValue(r.Context(), ctxLoggerKey, ctxLogger)
 		next.ServeHTTP(w, r.WithContext(ctx)) // logger in context
 	})
+}
+
+/*
+func CLog(ctx context.Context) *slog.Logger {
+	return GetLoggerFromContext(ctx)
+}
+*/
+// loggerFromContext returns logger from context.
+func GetLoggerFromContext(ctx context.Context) *slog.Logger {
+	if logger, ok := ctx.Value(ctxLoggerKey).(*slog.Logger); ok {
+		return logger
+	}
+
+	return slog.Default()
 }

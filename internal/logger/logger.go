@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"context"
 	"io"
 	"log"
 	"log/slog"
@@ -134,28 +133,4 @@ func NewLogFile(path string) *os.File {
 		log.Fatalf("cannot open file: %s", err)
 	}
 	return logFile
-}
-
-//type contextKey string
-
-const contextKey string = "ctxLogger"
-
-//type ctxLoggerKey struct{}
-
-// ContextWithLogger adds logger to context.
-func ContextWithLogger(ctx context.Context, logger *slog.Logger) context.Context {
-	return context.WithValue(ctx, contextKey, logger)
-}
-
-func CtxLogger(ctx context.Context) *slog.Logger {
-	return loggerFromContext(ctx)
-}
-
-// loggerFromContext returns logger from context.
-func loggerFromContext(ctx context.Context) *slog.Logger {
-	if logger, ok := ctx.Value(contextKey).(*slog.Logger); ok {
-		return logger
-	}
-
-	return slog.Default()
 }
