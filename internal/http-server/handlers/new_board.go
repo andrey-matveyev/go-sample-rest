@@ -3,8 +3,8 @@ package handlers
 import (
 	"encoding/json"
 	"log/slog"
-	"main/internal/middleware"
-	"main/internal/models"
+	"main/internal/http-server/middleware"
+	"main/internal/http-server/models"
 	"math/rand"
 	"net/http"
 )

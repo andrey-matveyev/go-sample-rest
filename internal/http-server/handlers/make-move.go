@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"main/internal/models"
+	"main/internal/http-server/models"
 	"main/internal/services"
 	"net/http"
 	"strconv"

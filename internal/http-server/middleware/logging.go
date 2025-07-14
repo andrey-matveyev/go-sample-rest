@@ -27,11 +27,13 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+// Can be used (if needed) in a current package in a middleware call chain
+// Instead of GetLoggerFromContext
 func rLog(r *http.Request) *slog.Logger {
 	return GetLoggerFromContext(r.Context())
 }
 
-// loggerFromContext returns logger from context.
+// Returns logger from context.
 func GetLoggerFromContext(ctx context.Context) *slog.Logger {
 	if logger, ok := ctx.Value(ctxLoggerKey).(*slog.Logger); ok {
 		return logger

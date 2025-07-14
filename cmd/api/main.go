@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 	"main/internal/config"
-	"main/internal/handlers"
+	"main/internal/http-server/handlers"
+	"main/internal/http-server/middleware"
 	"main/internal/logger"
-	"main/internal/middleware"
 	"net/http"
 
 	"github.com/go-chi/chi/v5" // Импортируем Chi роутер
