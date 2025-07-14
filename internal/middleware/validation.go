@@ -3,18 +3,23 @@ package middleware
 import (
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 )
 
 func PlayerValidationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		const op = "PlayerValidationMiddleware"
-		log := GetLoggerFromContext(r.Context())
-
 		playerStr := chi.URLParam(r, "player")
-		log.Info(op, slog.String("playerStr", playerStr))
+		player, err := strconv.Atoi(playerStr)
 
+		if err != nil || (player != 1 && player != -1) {
+			rLog(r).Error("Invalid value 'player'. Expected 1 or -1.",
+				slog.String("playerStr", playerStr))
+
+			http.Error(w, "Invalid value 'player'.", http.StatusBadRequest)
+			return
+		}
 		next.ServeHTTP(w, r)
 	})
 }

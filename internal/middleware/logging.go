@@ -27,11 +27,10 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-/*
-func CLog(ctx context.Context) *slog.Logger {
-	return GetLoggerFromContext(ctx)
+func rLog(r *http.Request) *slog.Logger {
+	return GetLoggerFromContext(r.Context())
 }
-*/
+
 // loggerFromContext returns logger from context.
 func GetLoggerFromContext(ctx context.Context) *slog.Logger {
 	if logger, ok := ctx.Value(ctxLoggerKey).(*slog.Logger); ok {
