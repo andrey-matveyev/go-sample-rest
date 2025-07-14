@@ -2,7 +2,10 @@ package middleware
 
 import (
 	"context"
+	"encoding/json"
+	"io"
 	"log/slog"
+	"main/internal/http-server/models"
 	"net/http"
 	"strconv"
 
@@ -32,29 +35,72 @@ func PlayerValidationMiddleware(next http.Handler) http.Handler {
 }
 
 func GetPlayerFromContext(ctx context.Context) (int, bool) {
-	id, ok := ctx.Value(ctxPlayerKey).(int)
-	return id, ok
+	item, ok := ctx.Value(ctxPlayerKey).(int)
+	return item, ok
 }
+
+type ctxBoardKeyType string
+
+const ctxBoardKey ctxBoardKeyType = "ctxBoardKey"
 
 func BoardValidationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		/*const op = "ValidationMiddleware"
-		log := logger.CtxLogger(r.Context())
+		buf, err := io.ReadAll(r.Body)
+		if err != nil {
+			rLog(r).Error("Error reading request body.",
+				"error", slog.StringValue(err.Error()))
 
-		// player
-		playerStr := chi.URLParam(r, "player")
-		log.Info("ValidationMiddleware", slog.String("playerStr", playerStr))
-		/*player, err := strconv.Atoi(playerStr)
-		if err != nil || (player != 1 && player != -1) {
-			log.Warn("Invalid value 'player'. Expected 1 or -1.",
-				slog.String("playerStr", playerStr),
-				slog.Int("player", player),
-				slog.String("op", op))
-			//http.Error(w, "Invalid value 'player'.", http.StatusBadRequest)
-			//return
+			http.Error(w, "Invalid body in request.", http.StatusBadRequest)
+			return
 		}
 
-		ctx := r.Context()*/
-		next.ServeHTTP(w, r)
+		var requestBody models.MakeMoveRequest
+		err = json.Unmarshal(buf, &requestBody)
+		if err != nil {
+			rLog(r).Error("Error parsing request body as JSON.",
+				slog.String("error", err.Error()),
+				slog.String("body", string(buf)),
+			)
+			http.Error(w, "Invalid body in request.", http.StatusBadRequest)
+			return
+		}
+
+		if len(requestBody.Board) != 3 {
+			rLog(r).Error("Error count of row in the 'board'. Expected 3",
+				slog.Int("rows", len(requestBody.Board)),
+			)
+			http.Error(w, "Invalid body in request.", http.StatusBadRequest)
+			return
+		}
+
+		for i := range 2 {
+			if len(requestBody.Board[i]) != 3 {
+				rLog(r).Error("Error count of column in the 'board'. Expected 3",
+					slog.Int("columns", len(requestBody.Board[i])),
+				)
+				http.Error(w, "Invalid body in request.", http.StatusBadRequest)
+				return
+			}
+		}
+
+		for i := range 2 {
+			for j := range 2 {
+				if requestBody.Board[i][j] != 1 && requestBody.Board[i][j] != 0 && requestBody.Board[i][j] != -1 {
+					rLog(r).Error("Invalid value in the 'board'. Expected 1, 0 or -1.",
+						slog.Int("value", requestBody.Board[i][j]))
+
+					http.Error(w, "Invalid body in request.", http.StatusBadRequest)
+					return
+				}
+			}
+		}
+
+		ctx := context.WithValue(r.Context(), ctxBoardKey, requestBody)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+func GetBoardFromContext(ctx context.Context) (models.MakeMoveRequest, bool) {
+	item, ok := ctx.Value(ctxBoardKey).(models.MakeMoveRequest)
+	return item, ok
 }
