@@ -1,12 +1,17 @@
 package middleware
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 )
+
+type ctxPlayerKeyType string
+
+const ctxPlayerKey ctxPlayerKeyType = "ctxPlayerKey"
 
 func PlayerValidationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -20,8 +25,15 @@ func PlayerValidationMiddleware(next http.Handler) http.Handler {
 			http.Error(w, "Invalid value 'player'.", http.StatusBadRequest)
 			return
 		}
-		next.ServeHTTP(w, r)
+
+		ctx := context.WithValue(r.Context(), ctxPlayerKey, player)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+func GetPlayerFromContext(ctx context.Context) (int, bool) {
+	id, ok := ctx.Value(ctxPlayerKey).(int)
+	return id, ok
 }
 
 func BoardValidationMiddleware(next http.Handler) http.Handler {

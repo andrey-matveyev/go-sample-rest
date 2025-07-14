@@ -2,20 +2,21 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
+	"main/internal/middleware"
 	"main/internal/models"
 	"math/rand"
 	"net/http"
-	"strconv"
-
-	"github.com/go-chi/chi/v5"
 )
 
 func NewBoardHandler(w http.ResponseWriter, r *http.Request) {
-	playerStr := chi.URLParam(r, "player") // Извлекаем параметр из URL с помощью Chi
-	player, err := strconv.Atoi(playerStr)
-	if err != nil || (player != 1 && player != -1) {
-		http.Error(w, "Некорректное значение 'player' в URL-пути. Ожидается 1 или -1.", http.StatusBadRequest)
+	log := middleware.GetLoggerFromContext(r.Context())
+
+	player, ok := middleware.GetPlayerFromContext(r.Context())
+	if !ok {
+		log.Error("Missing 'player' value in context. Expected included.")
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -24,13 +25,10 @@ func NewBoardHandler(w http.ResponseWriter, r *http.Request) {
 		newBoard[i] = make([]int, 3)
 	}
 
-	// Если игрок -1, делаем первый ход (например, в центр)
 	if player == -1 {
-		newBoard[1][1] = 1 // Например, сервер делает первый ход 1
-		log.Printf("Сгенерирована новая доска для игрока %d с первым ходом сервера.", player)
-	} else {
-		log.Printf("Сгенерирована новая пустая доска для игрока %d.", player)
+		newBoard[1][1] = 1
 	}
+	log.Info("New board was generated.", slog.Int("player", player))
 
 	response := models.NewBoardResponse{
 		Board:    newBoard,
