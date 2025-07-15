@@ -22,7 +22,7 @@ func PlayerValidationMiddleware(next http.Handler) http.Handler {
 		player, err := strconv.Atoi(playerStr)
 
 		if err != nil || (player != 1 && player != -1) {
-			rLog(r).Error("Invalid value 'player'. Expected 1 or -1.",
+			rLog(r).Error("invalid value 'player'. Expected 1 or -1.",
 				slog.String("playerStr", playerStr))
 
 			http.Error(w, "Invalid value 'player'.", http.StatusBadRequest)
@@ -47,7 +47,7 @@ func BoardValidationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		buf, err := io.ReadAll(r.Body)
 		if err != nil {
-			rLog(r).Error("Error reading request body.",
+			rLog(r).Error("error reading request body.",
 				"error", slog.StringValue(err.Error()))
 
 			http.Error(w, "Invalid body in request.", http.StatusBadRequest)
@@ -57,7 +57,7 @@ func BoardValidationMiddleware(next http.Handler) http.Handler {
 		var requestBody models.MakeMoveRequest
 		err = json.Unmarshal(buf, &requestBody)
 		if err != nil {
-			rLog(r).Error("Error parsing request body as JSON.",
+			rLog(r).Error("error parsing request body as JSON.",
 				slog.String("error", err.Error()),
 				slog.String("body", string(buf)),
 			)
@@ -66,7 +66,7 @@ func BoardValidationMiddleware(next http.Handler) http.Handler {
 		}
 
 		if len(requestBody.Board) != 3 {
-			rLog(r).Error("Error count of row in the 'board'. Expected 3",
+			rLog(r).Error("error count of row in the 'board'. Expected 3",
 				slog.Int("rows", len(requestBody.Board)),
 			)
 			http.Error(w, "Invalid body in request.", http.StatusBadRequest)
@@ -75,7 +75,7 @@ func BoardValidationMiddleware(next http.Handler) http.Handler {
 
 		for i := range 2 {
 			if len(requestBody.Board[i]) != 3 {
-				rLog(r).Error("Error count of column in the 'board'. Expected 3",
+				rLog(r).Error("error count of column in the 'board'. Expected 3",
 					slog.Int("columns", len(requestBody.Board[i])),
 				)
 				http.Error(w, "Invalid body in request.", http.StatusBadRequest)
@@ -86,7 +86,7 @@ func BoardValidationMiddleware(next http.Handler) http.Handler {
 		for i := range 2 {
 			for j := range 2 {
 				if requestBody.Board[i][j] != 1 && requestBody.Board[i][j] != 0 && requestBody.Board[i][j] != -1 {
-					rLog(r).Error("Invalid value in the 'board'. Expected 1, 0 or -1.",
+					rLog(r).Error("invalid value in the 'board'. Expected 1, 0 or -1.",
 						slog.Int("value", requestBody.Board[i][j]))
 
 					http.Error(w, "Invalid body in request.", http.StatusBadRequest)

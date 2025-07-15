@@ -22,7 +22,7 @@ type sqliteStorage struct {
 func NewStorage(path string) (Storage, error) {
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {
-		return nil, fmt.Errorf("Open sql.DB error: %w", err)
+		return nil, fmt.Errorf("open sql.DB error: %w", err)
 	}
 
 	stmt, err := db.Prepare(`
@@ -45,12 +45,12 @@ func NewStorage(path string) (Storage, error) {
     );
 	`)
 	if err != nil {
-		return nil, fmt.Errorf("Prepare 'CREATE TABLE' sql.DB error: %w", err)
+		return nil, fmt.Errorf("prepare 'CREATE TABLE' sql.DB error: %w", err)
 	}
 
 	_, err = stmt.Exec()
 	if err != nil {
-		return nil, fmt.Errorf("Execute 'CREATE TABLE' sql.Stmt error: %w", err)
+		return nil, fmt.Errorf("execute 'CREATE TABLE' sql.Stmt error: %w", err)
 	}
 
 	return &sqliteStorage{db: db}, nil
@@ -69,17 +69,17 @@ func (item *sqliteStorage) SaveNewGame() (int64, error) {
         (0, 0, datetime('now'))
 	`)
 	if err != nil {
-		return 0, fmt.Errorf("Prepare 'INSERT' sql.DB error: %w", err)
+		return 0, fmt.Errorf("prepare 'INSERT' sql.DB error: %w", err)
 	}
 
 	res, err := stmt.Exec()
 	if err != nil {
-		return 0, fmt.Errorf("Execute 'INSERT' sql.Stmt error: %w", err)
+		return 0, fmt.Errorf("execute 'INSERT' sql.Stmt error: %w", err)
 	}
 
 	id, err := res.LastInsertId()
 	if err != nil {
-		return 0, fmt.Errorf("Error getting last insert id: %w", err)
+		return 0, fmt.Errorf("error getting last insert id: %w", err)
 	}
 
 	return id, nil
@@ -99,7 +99,7 @@ func (item *sqliteStorage) Shutdown() error {
 	}
 	err := item.db.Close()
 	if err != nil {
-		return fmt.Errorf("Close sql.DB  error: %w", err)
+		return fmt.Errorf("close sql.DB  error: %w", err)
 	}
 	return nil
 }

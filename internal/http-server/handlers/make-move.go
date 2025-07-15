@@ -13,7 +13,7 @@ func MakeMoveHandler(w http.ResponseWriter, r *http.Request) {
 
 	player, ok := middleware.GetPlayerFromContext(r.Context())
 	if !ok {
-		log.Error("Missing 'player' value in context. Expected included.")
+		log.Error("missing 'player' value in context. Expected included.")
 
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -21,7 +21,7 @@ func MakeMoveHandler(w http.ResponseWriter, r *http.Request) {
 
 	requestBody, ok := middleware.GetBoardFromContext(r.Context())
 	if !ok {
-		log.Error("Missing 'board' in context. Expected included.")
+		log.Error("missing 'board' in context. Expected included.")
 
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return

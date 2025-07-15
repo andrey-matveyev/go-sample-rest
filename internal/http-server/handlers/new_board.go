@@ -14,7 +14,7 @@ func NewBoardHandler(w http.ResponseWriter, r *http.Request) {
 
 	player, ok := middleware.GetPlayerFromContext(r.Context())
 	if !ok {
-		log.Error("Missing 'player' value in context. Expected included.")
+		log.Error("missing 'player' value in context. Expected included.")
 
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return

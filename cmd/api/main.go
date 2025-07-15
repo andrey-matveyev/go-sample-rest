@@ -27,13 +27,13 @@ func main() {
 
 	storage, err := repository.NewStorage(cfg.RepositoryFile)
 	if err != nil {
-		log.Error("Storage not created.", slog.String("error", err.Error()))
+		log.Error("storage not created.", slog.String("error", err.Error()))
 		return
 	}
 
 	defer func() {
 		if err := storage.Shutdown(); err != nil {
-			log.Error("Error shutting down storage.", slog.String("error", err.Error()))
+			log.Error("error shutting down storage.", slog.String("error", err.Error()))
 			return
 		}
 		log.Info("Storage shutdown gracefully.")
@@ -73,13 +73,13 @@ func main() {
 		log.Info("Starting http-server...")
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			serverErrors <- fmt.Errorf("Http-server startup error: %w", err)
+			serverErrors <- fmt.Errorf("http-server startup error: %w", err)
 		}
 	}()
 
 	select {
 	case err := <-serverErrors:
-		log.Error("Error starting http-server", slog.String("error", err.Error()))
+		log.Error("error starting http-server", slog.String("error", err.Error()))
 		return
 	case <-time.After(3 * time.Second):
 		log.Info("Http-server successfully started.", slog.String("address", server.Addr))
@@ -96,7 +96,7 @@ func main() {
 		defer cancel()
 
 		if err := server.Shutdown(shutdownCtx); err != nil {
-			log.Error("Http-server shutdown error.", slog.String("error", err.Error()))
+			log.Error("http-server shutdown error.", slog.String("error", err.Error()))
 			return
 		}
 		log.Info("Http-server stopped gracefully.")
