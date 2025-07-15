@@ -21,7 +21,7 @@ const (
 	jsonFormat   = "json"
 )
 
-func SetupDefaultLogger(cfg *config.Config) {
+func SetupDefaultLogger(cfg *config.Config) *slog.Logger {
 	var writer io.Writer
 	switch cfg.Destination {
 	case writerStdout:
@@ -35,13 +35,14 @@ func SetupDefaultLogger(cfg *config.Config) {
 		log.Fatalf("Default logger not created. Invalid 'destination' parameter: %s", cfg.Destination)
 	}
 
-	_ = NewLogger(
+	logger := NewLogger(
 		WithLevel(cfg.Level),
 		WithFormat(cfg.Format),
 		WithWriter(writer),
 		WithAddSource(cfg.AddSource),
 		WithSetDefault(true), // Set as default logger for application
 	)
+	return logger
 }
 
 type loggerOptions struct {

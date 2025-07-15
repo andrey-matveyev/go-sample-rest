@@ -4,12 +4,15 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type Storage interface {
 	SaveNewGame() (int64, error)
 	UpdateGame() (int64, error)
 	SaveNewMove() (int64, error)
+	Shutdown() error
 }
 
 type sqliteStorage struct {
@@ -19,7 +22,7 @@ type sqliteStorage struct {
 func NewStorage(path string) (Storage, error) {
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {
-		return nil, fmt.Errorf("Open sqlite3 error: %w", err)
+		return nil, fmt.Errorf("Open sql.DB error: %w", err)
 	}
 
 	stmt, err := db.Prepare(`
@@ -88,6 +91,17 @@ func (item *sqliteStorage) UpdateGame() (int64, error) {
 
 func (item *sqliteStorage) SaveNewMove() (int64, error) {
 	return 0, nil
+}
+
+func (item *sqliteStorage) Shutdown() error {
+	if item.db == nil {
+		return nil
+	}
+	err := item.db.Close()
+	if err != nil {
+		return fmt.Errorf("Close sql.DB  error: %w", err)
+	}
+	return nil
 }
 
 /*
