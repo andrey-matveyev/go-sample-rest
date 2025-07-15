@@ -1,15 +1,35 @@
 
 ```
-go-sample-rest/
-├── cmd/
-│     └── api/
-│         └── main.go               # Entry point, router and server initialization.
-├── internal/
-│     ├── handlers/                 # HTTP request handlers (controllers)
-│     ├── services/                 # Game business logic
-│     ├── models/                   # Game data structures
-│     ├── middleware/               # 
-│     └── repository/               # Not needed yet, but we keep it in mind for storing game states
+go-sample-rest
+├── cfg
+│   └── config.yaml
+├── cmd
+│   └── main.go
 ├── go.mod
-└── ...
+├── go.sum
+├── internal
+│   ├── config
+│   │   └── config.go
+│   ├── http-server
+│   │   ├── handlers
+│   │   │   ├── make-move.go
+│   │   │   └── new_board.go
+│   │   ├── middleware
+│   │   │   ├── cors.go
+│   │   │   ├── logging.go
+│   │   │   ├── request_id.go
+│   │   │   └── validation.go
+│   │   ├── models
+│   │   │   └── models.go
+│   │   └── openapi.yaml
+│   ├── logger
+│   │   └── logger.go
+│   ├── repository
+│   │   ├── db
+│   │   │   └── repository.db
+│   │   └── sqlite_repo.go
+│   └── services
+│       └── service.go
+├── LICENSE.txt
+└── ReadMe.md
 ```
