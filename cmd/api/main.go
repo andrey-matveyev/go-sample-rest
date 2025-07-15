@@ -30,6 +30,7 @@ func main() {
 		log.Error("storage not created.", slog.String("error", err.Error()))
 		return
 	}
+	log.Info("Storage created successfully.")
 
 	defer func() {
 		if err := storage.Shutdown(); err != nil {
@@ -82,9 +83,11 @@ func main() {
 		log.Error("error starting http-server", slog.String("error", err.Error()))
 		return
 	case <-time.After(3 * time.Second):
-		log.Info("Http-server successfully started.", slog.String("address", server.Addr))
+		log.Info("Http-server started successfully.", slog.String("address", server.Addr))
 
 		osSignals := make(chan os.Signal, 1)
+		defer close(osSignals)
+
 		signal.Notify(osSignals, syscall.SIGINT, syscall.SIGTERM)
 
 		sig := <-osSignals

@@ -9,7 +9,7 @@ import (
 )
 
 type Storage interface {
-	SaveNewGame() (int64, error)
+	SaveNewGame(player int) (int64, error)
 	UpdateGame() (int64, error)
 	SaveNewMove() (int64, error)
 	Shutdown() error
@@ -25,19 +25,33 @@ func NewStorage(path string) (Storage, error) {
 		return nil, fmt.Errorf("open sql.DB error: %w", err)
 	}
 
+	// Create table 'games'
 	stmt, err := db.Prepare(`
 	CREATE TABLE IF NOT EXISTS 
 	games(
 		id         INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+		player     INTEGER NOT NULL,
 		is_over    INTEGER NOT NULL,
 		win_player INTEGER NOT NULL,
         start_time TEXT NOT NULL,
         stop_time  TEXT
     );
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("prepare 'CREATE TABLE' sql.DB error: %w. Table 'games'.", err)
+	}
+
+	_, err = stmt.Exec()
+	if err != nil {
+		return nil, fmt.Errorf("execute 'CREATE TABLE' sql.Stmt error: %w. Table 'games'.", err)
+	}
+
+	// Create table 'moves'
+	stmt, err = db.Prepare(`
     CREATE TABLE IF NOT EXISTS 
 	moves(
 		id        INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-		game_id   INTEGER NOT NULL,
+		id_game   INTEGER NOT NULL,
 		player    INTEGER NOT NULL,
         board     TEXT NOT NULL,
 		move_time TEXT NOT NULL,
@@ -45,12 +59,12 @@ func NewStorage(path string) (Storage, error) {
     );
 	`)
 	if err != nil {
-		return nil, fmt.Errorf("prepare 'CREATE TABLE' sql.DB error: %w", err)
+		return nil, fmt.Errorf("prepare 'CREATE TABLE' sql.DB error: %w. Table 'moves'.", err)
 	}
 
 	_, err = stmt.Exec()
 	if err != nil {
-		return nil, fmt.Errorf("execute 'CREATE TABLE' sql.Stmt error: %w", err)
+		return nil, fmt.Errorf("execute 'CREATE TABLE' sql.Stmt error: %w. Table 'moves'.", err)
 	}
 
 	return &sqliteStorage{db: db}, nil
@@ -61,18 +75,18 @@ var (
 	ErrURLExists   = errors.New("url exists")
 )
 
-func (item *sqliteStorage) SaveNewGame() (int64, error) {
+func (item *sqliteStorage) SaveNewGame(player int) (int64, error) {
 	stmt, err := item.db.Prepare(`
 	INSERT INTO games
-        (is_over, win_player, game_start) 
+        (player, is_over, win_player, game_start) 
     VALUES
-        (0, 0, datetime('now'))
+        (?, 0, 0, datetime('now'))
 	`)
 	if err != nil {
 		return 0, fmt.Errorf("prepare 'INSERT' sql.DB error: %w", err)
 	}
 
-	res, err := stmt.Exec()
+	res, err := stmt.Exec(player)
 	if err != nil {
 		return 0, fmt.Errorf("execute 'INSERT' sql.Stmt error: %w", err)
 	}

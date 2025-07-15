@@ -1,5 +1,5 @@
 environment: "local" # "local", "dev", "prod"
-repository_file: "./internal/repository/repository.db"
+repository_file: "./internal/repository/db/repository.db"
 http_server:
   address: "localhost:8080"
   timeout: 5s
