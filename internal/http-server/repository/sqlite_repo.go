@@ -38,12 +38,12 @@ func NewStorage(path string) (Storage, error) {
     );
 	`)
 	if err != nil {
-		return nil, fmt.Errorf("prepare 'CREATE TABLE' sql.DB error: %w. Table 'games'.", err)
+		return nil, fmt.Errorf("error prepare create table 'games': %w", err)
 	}
 
 	_, err = stmt.Exec()
 	if err != nil {
-		return nil, fmt.Errorf("execute 'CREATE TABLE' sql.Stmt error: %w. Table 'games'.", err)
+		return nil, fmt.Errorf("error create table 'games': %w", err)
 	}
 
 	// Create table 'moves'
@@ -59,12 +59,12 @@ func NewStorage(path string) (Storage, error) {
     );
 	`)
 	if err != nil {
-		return nil, fmt.Errorf("prepare 'CREATE TABLE' sql.DB error: %w. Table 'moves'.", err)
+		return nil, fmt.Errorf("error prepare create table 'moves': %w", err)
 	}
 
 	_, err = stmt.Exec()
 	if err != nil {
-		return nil, fmt.Errorf("execute 'CREATE TABLE' sql.Stmt error: %w. Table 'moves'.", err)
+		return nil, fmt.Errorf("error create table 'moves': %w", err)
 	}
 
 	return &sqliteStorage{db: db}, nil
