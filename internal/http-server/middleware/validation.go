@@ -100,7 +100,7 @@ func BoardValidationMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func GetBoardFromContext(ctx context.Context) (models.MakeMoveRequest, bool) {
+func GetBodyFromContext(ctx context.Context) (models.MakeMoveRequest, bool) {
 	item, ok := ctx.Value(ctxBoardKey).(models.MakeMoveRequest)
 	return item, ok
 }

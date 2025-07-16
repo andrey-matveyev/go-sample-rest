@@ -48,14 +48,14 @@ func main() {
 	router.Route("/api/v1", func(r chi.Router) {
 		r.Route("/new-board/{player}", func(r chi.Router) {
 			r.Use(middleware.PlayerValidationMiddleware)
-			r.Post("/", handlers.NewBoardHandler)
-			r.Options("/", handlers.NewBoardHandler)
+			r.Post("/", handlers.NewBoardHandler(storage))
+			r.Options("/", handlers.NewBoardHandler(storage))
 		})
 		r.Route("/make-move/{player}", func(r chi.Router) {
 			r.Use(middleware.PlayerValidationMiddleware)
 			r.Use(middleware.BoardValidationMiddleware)
-			r.Post("/", handlers.MakeMoveHandler)
-			r.Options("/", handlers.MakeMoveHandler)
+			r.Post("/", handlers.MakeMoveHandler(storage))
+			r.Options("/", handlers.MakeMoveHandler(storage))
 		})
 	})
 

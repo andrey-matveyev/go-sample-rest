@@ -10,8 +10,8 @@ import (
 
 type Storage interface {
 	SaveNewGame(player int) (int64, error)
-	UpdateGame() (int64, error)
-	SaveNewMove() (int64, error)
+	UpdateGame() error
+	SaveNewMove(idGame int64, board string) error
 	Shutdown() error
 }
 
@@ -52,10 +52,9 @@ func NewStorage(path string) (Storage, error) {
 	moves(
 		id        INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 		id_game   INTEGER NOT NULL,
-		player    INTEGER NOT NULL,
         board     TEXT NOT NULL,
 		move_time TEXT NOT NULL,
-        FOREIGN KEY (game_id) REFERENCES games(id)
+        FOREIGN KEY (id_game) REFERENCES games(id)
     );
 	`)
 	if err != nil {
@@ -78,7 +77,7 @@ var (
 func (item *sqliteStorage) SaveNewGame(player int) (int64, error) {
 	stmt, err := item.db.Prepare(`
 	INSERT INTO games
-        (player, is_over, win_player, game_start) 
+        (player, is_over, win_player, start_time) 
     VALUES
         (?, 0, 0, datetime('now'))
 	`)
@@ -99,12 +98,27 @@ func (item *sqliteStorage) SaveNewGame(player int) (int64, error) {
 	return id, nil
 }
 
-func (item *sqliteStorage) UpdateGame() (int64, error) {
-	return 0, nil
+func (item *sqliteStorage) UpdateGame() error {
+	return nil
 }
 
-func (item *sqliteStorage) SaveNewMove() (int64, error) {
-	return 0, nil
+func (item *sqliteStorage) SaveNewMove(idGame int64, board string) error {
+	stmt, err := item.db.Prepare(`
+	INSERT INTO moves
+        (id_game, board, move_time) 
+    VALUES
+        (?, ?, datetime('now'))
+	`)
+	if err != nil {
+		return fmt.Errorf("prepare 'INSERT' sql.DB error: %w", err)
+	}
+
+	_, err = stmt.Exec(idGame, board)
+	if err != nil {
+		return fmt.Errorf("execute 'INSERT' sql.Stmt error: %w", err)
+	}
+
+	return nil
 }
 
 func (item *sqliteStorage) Shutdown() error {
@@ -117,55 +131,3 @@ func (item *sqliteStorage) Shutdown() error {
 	}
 	return nil
 }
-
-/*
-
-"github.com/mattn/go-sqlite3"
-
-func (s *Storage) SaveURL(urlToSave string, alias string) (int64, error) {
-	const op = "storage.sqlite.SaveURL"
-
-	stmt, err := s.db.Prepare("INSERT INTO url(url, alias) VALUES(?, ?)")
-	if err != nil {
-		return 0, fmt.Errorf("%s: %w", op, err)
-	}
-
-	res, err := stmt.Exec(urlToSave, alias)
-	if err != nil {
-		if sqliteErr, ok := err.(sqlite3.Error); ok && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
-			return 0, fmt.Errorf("%s: %w", op, storage.ErrURLExists)
-		}
-
-		return 0, fmt.Errorf("%s: %w", op, err)
-	}
-
-	id, err := res.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("%s: failed to get last insert id: %w", op, err)
-	}
-
-	return id, nil
-}
-
-func (s *Storage) GetURL(alias string) (string, error) {
-	const op = "storage.sqlite.GetURL"
-
-	stmt, err := s.db.Prepare("SELECT url FROM url WHERE alias = ?")
-	if err != nil {
-		return "", fmt.Errorf("%s: prepare statement: %w", op, err)
-	}
-
-	var resURL string
-
-	err = stmt.QueryRow(alias).Scan(&resURL)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return "", storage.ErrURLNotFound
-		}
-
-		return "", fmt.Errorf("%s: execute statement: %w", op, err)
-	}
-
-	return resURL, nil
-}
-*/
